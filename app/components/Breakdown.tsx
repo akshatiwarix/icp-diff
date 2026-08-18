@@ -64,6 +64,7 @@ export function Breakdown({
           other={null}
           otherDq={null}
           rules={rules.a}
+          rulePrefix="was"
         />
         <CriteriaColumn
           heading="ICP B"
@@ -74,6 +75,7 @@ export function Breakdown({
           other={byId}
           otherDq={dqById}
           rules={rules.b}
+          rulePrefix="now"
         />
       </div>
     </div>
@@ -89,6 +91,7 @@ function CriteriaColumn({
   other,
   otherDq,
   rules,
+  rulePrefix,
 }: {
   heading: string;
   score: number;
@@ -100,6 +103,8 @@ function CriteriaColumn({
   otherDq: Map<string, DisqualifierEvaluation> | null;
   /** Rule phrases for the ids whose rule differs between the two ICPs. */
   rules: Map<string, string>;
+  /** "was" on the ICP A column, "now" on ICP B. */
+  rulePrefix: "was" | "now";
 }) {
   return (
     <div>
@@ -143,7 +148,7 @@ function CriteriaColumn({
                 <span className="text-slate-900 dark:text-slate-100">{criterion.label}</span>
                 {rules.has(criterion.criterionId) ? (
                   <span className="ml-1 font-mono text-[10px] text-amber-700 dark:text-amber-300">
-                    now {rules.get(criterion.criterionId)}
+                    {rulePrefix} {rules.get(criterion.criterionId)}
                   </span>
                 ) : null}
                 <span className="block text-[11px] text-slate-500 dark:text-slate-400">
@@ -202,7 +207,7 @@ function CriteriaColumn({
                   </span>
                   {rules.has(disqualifier.disqualifierId) ? (
                     <span className="ml-1 font-mono text-[10px] text-amber-700 dark:text-amber-300">
-                      now {rules.get(disqualifier.disqualifierId)}
+                      {rulePrefix} {rules.get(disqualifier.disqualifierId)}
                     </span>
                   ) : null}
                   <span className="block text-[11px] text-slate-500 dark:text-slate-500">
