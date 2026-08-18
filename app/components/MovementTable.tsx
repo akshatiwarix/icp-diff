@@ -1,6 +1,7 @@
 "use client";
 
 import { describeCause, type AccountDiff, type DiffReport } from "@/lib/diff";
+import type { IcpDefinition } from "@/lib/scoring";
 
 import { BandStrip } from "./BandStrip";
 import { Breakdown } from "./Breakdown";
@@ -18,6 +19,8 @@ export type TableFilter = "movers" | "all";
  */
 export function MovementTable({
   report,
+  icpA,
+  icpB,
   filter,
   onFilterChange,
   selectedAtomId,
@@ -25,6 +28,8 @@ export function MovementTable({
   onExpand,
 }: {
   report: DiffReport;
+  icpA: IcpDefinition;
+  icpB: IcpDefinition;
   filter: TableFilter;
   onFilterChange: (filter: TableFilter) => void;
   selectedAtomId: string | null;
@@ -104,6 +109,8 @@ export function MovementTable({
               <Row
                 key={account.companyId}
                 account={account}
+                icpA={icpA}
+                icpB={icpB}
                 position={position}
                 expanded={expandedId === account.companyId}
                 onExpand={() => onExpand(expandedId === account.companyId ? null : account.companyId)}
@@ -128,6 +135,8 @@ export function MovementTable({
 
 function Row({
   account,
+  icpA,
+  icpB,
   position,
   expanded,
   onExpand,
@@ -135,6 +144,8 @@ function Row({
   selectedAtomId,
 }: {
   account: AccountDiff;
+  icpA: IcpDefinition;
+  icpB: IcpDefinition;
   position: number;
   expanded: boolean;
   onExpand: () => void;
@@ -229,7 +240,7 @@ function Row({
       {expanded ? (
         <tr>
           <td colSpan={6} className="p-0">
-            <Breakdown account={account} />
+            <Breakdown account={account} icpA={icpA} icpB={icpB} />
           </td>
         </tr>
       ) : null}

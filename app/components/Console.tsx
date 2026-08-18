@@ -176,6 +176,8 @@ export function Console({
 
         <MovementTable
           report={report}
+          icpA={effective.icpA}
+          icpB={effective.icpB}
           filter={filter}
           onFilterChange={setFilter}
           selectedAtomId={selectedAtomId}

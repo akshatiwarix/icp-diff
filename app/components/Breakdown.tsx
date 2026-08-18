@@ -1,5 +1,12 @@
 import type { AccountDiff } from "@/lib/diff";
-import type { CriterionEvaluation, DisqualifierEvaluation } from "@/lib/scoring";
+import { describeRule } from "@/lib/scoring";
+import type {
+  Criterion,
+  CriterionEvaluation,
+  Disqualifier,
+  DisqualifierEvaluation,
+  IcpDefinition,
+} from "@/lib/scoring";
 
 import { QualifiedStrip } from "./BandStrip";
 import { Num } from "./ui";
@@ -16,9 +23,27 @@ import { Num } from "./ui";
  * fit except for the headcount rule" is the most useful thing this screen can say,
  * and short-circuiting on the disqualifier throws it away.
  */
-export function Breakdown({ account }: { account: AccountDiff }) {
+export function Breakdown({
+  account,
+  icpA,
+  icpB,
+}: {
+  account: AccountDiff;
+  icpA: IcpDefinition;
+  icpB: IcpDefinition;
+}) {
   const byId = new Map(account.breakdown.a.criteria.map((c) => [c.criterionId, c]));
   const dqById = new Map(account.breakdown.a.disqualifiers.map((d) => [d.disqualifierId, d]));
+
+  /**
+   * A criterion's `label` is user-authored prose and Day 001 renders it verbatim.
+   * A `value_changed` edit does not rewrite it, so ICP B can legitimately show
+   * "Headcount 100–2,000" over a rule of 50–3,000. The `detail` line underneath is
+   * always the truth, but a reader scanning labels would be misled — so where a
+   * rule differs between the two ICPs, the operative rule is printed beside the
+   * label rather than trusted to it.
+   */
+  const rules = ruleChanges(icpA, icpB);
 
   return (
     <div className="space-y-4 border-t border-slate-200 bg-slate-50/60 px-3 py-3 dark:border-slate-800 dark:bg-slate-950/40">
@@ -38,6 +63,7 @@ export function Breakdown({ account }: { account: AccountDiff }) {
           disqualifiers={account.breakdown.a.disqualifiers}
           other={null}
           otherDq={null}
+          rules={rules.a}
         />
         <CriteriaColumn
           heading="ICP B"
@@ -47,6 +73,7 @@ export function Breakdown({ account }: { account: AccountDiff }) {
           disqualifiers={account.breakdown.b.disqualifiers}
           other={byId}
           otherDq={dqById}
+          rules={rules.b}
         />
       </div>
     </div>
@@ -61,6 +88,7 @@ function CriteriaColumn({
   disqualifiers,
   other,
   otherDq,
+  rules,
 }: {
   heading: string;
   score: number;
@@ -70,6 +98,8 @@ function CriteriaColumn({
   /** ICP A's evaluations, so the B column can mark what changed. */
   other: Map<string, CriterionEvaluation> | null;
   otherDq: Map<string, DisqualifierEvaluation> | null;
+  /** Rule phrases for the ids whose rule differs between the two ICPs. */
+  rules: Map<string, string>;
 }) {
   return (
     <div>
@@ -111,6 +141,11 @@ function CriteriaColumn({
               </span>
               <span className="min-w-0 flex-1">
                 <span className="text-slate-900 dark:text-slate-100">{criterion.label}</span>
+                {rules.has(criterion.criterionId) ? (
+                  <span className="ml-1 font-mono text-[10px] text-amber-700 dark:text-amber-300">
+                    now {rules.get(criterion.criterionId)}
+                  </span>
+                ) : null}
                 <span className="block text-[11px] text-slate-500 dark:text-slate-400">
                   {criterion.detail}
                 </span>
@@ -165,6 +200,11 @@ function CriteriaColumn({
                   >
                     {disqualifier.reason}
                   </span>
+                  {rules.has(disqualifier.disqualifierId) ? (
+                    <span className="ml-1 font-mono text-[10px] text-amber-700 dark:text-amber-300">
+                      now {rules.get(disqualifier.disqualifierId)}
+                    </span>
+                  ) : null}
                   <span className="block text-[11px] text-slate-500 dark:text-slate-500">
                     {disqualifier.detail}
                   </span>
@@ -179,4 +219,41 @@ function CriteriaColumn({
       ) : null}
     </div>
   );
+}
+
+/**
+ * Which ids hold a different rule on each side, and how that rule reads.
+ *
+ * Only ids present on both sides are compared: something added or removed is
+ * already marked `new` or simply absent, and labelling it "changed" as well would
+ * be noise on the row that is easiest to read correctly.
+ */
+function ruleChanges(
+  icpA: IcpDefinition,
+  icpB: IcpDefinition,
+): { a: Map<string, string>; b: Map<string, string> } {
+  const a = new Map<string, string>();
+  const b = new Map<string, string>();
+
+  const compare = (
+    left: (Criterion | Disqualifier)[],
+    right: (Criterion | Disqualifier)[],
+  ) => {
+    const rightById = new Map(right.map((entry) => [entry.id, entry]));
+    for (const entry of left) {
+      const counterpart = rightById.get(entry.id);
+      if (!counterpart) continue;
+      const same =
+        entry.operator === counterpart.operator &&
+        JSON.stringify(entry.value) === JSON.stringify(counterpart.value);
+      if (same) continue;
+      a.set(entry.id, describeRule(entry));
+      b.set(counterpart.id, describeRule(counterpart));
+    }
+  };
+
+  compare(icpA.criteria, icpB.criteria);
+  compare(icpA.disqualifiers, icpB.disqualifiers);
+
+  return { a, b };
 }
