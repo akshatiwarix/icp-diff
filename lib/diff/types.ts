@@ -194,14 +194,29 @@ export function isHeld(verdict: Verdict): boolean {
  * `displacement` is a cause in its own right, never blended with edit causes: an
  * account whose own score held or rose while its rank fell did not fail on fit,
  * it failed on arithmetic about other accounts, and the report cites which ones.
+ *
+ * `combination` is the honest floor. Three edits where any two suffice produce an
+ * account that moved with *no* unit sufficient and *no* unit necessary — remove
+ * any one and the move still happens, apply any one and it does not. Reporting no
+ * cause there would break the completeness invariant; picking a unit anyway would
+ * be a guess. So the claim shrinks to what is true: this set, together, did it,
+ * and no member of it can be singled out.
  */
 export type Cause =
   | { kind: "edit"; atomId: string; sufficient: boolean; necessary: boolean }
-  | { kind: "displacement"; overtakenBy: string[] };
+  | { kind: "displacement"; overtakenBy: string[] }
+  | { kind: "combination"; atomIds: string[] };
 
 /** `sufficient !== necessary` — the honest report of non-additivity. */
 export function isInteraction(cause: Cause): boolean {
   return cause.kind === "edit" && cause.sufficient !== cause.necessary;
+}
+
+/** Every atom a cause names, for filtering the table by a ledger row. */
+export function causeAtomIds(cause: Cause): string[] {
+  if (cause.kind === "edit") return [cause.atomId];
+  if (cause.kind === "combination") return cause.atomIds;
+  return [];
 }
 
 /* ───────────────────────────────── bands ──────────────────────────────── */
@@ -295,7 +310,17 @@ export type LedgerEntry = {
 };
 
 export type Attribution =
-  | { state: "attributed"; ledger: LedgerEntry[]; units: AblationUnit[] }
+  | {
+      state: "attributed";
+      ledger: LedgerEntry[];
+      units: AblationUnit[];
+      /**
+       * Accounts that moved with no single edit sufficient or necessary, and so
+       * carry a `combination` cause instead. Surfaced at report level because it
+       * belongs to no ledger row by construction.
+       */
+      combinationMoves: number;
+    }
   | { state: "unattributed"; reason: string };
 
 export type DiffReport = {

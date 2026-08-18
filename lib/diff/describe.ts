@@ -76,6 +76,9 @@ export function describeCause(cause: Cause, descriptionOf: (atomId: string) => s
     const names = cause.overtakenBy.join(", ");
     return `displaced — its own score did not fall; it was overtaken by ${names}`;
   }
+  if (cause.kind === "combination") {
+    return `no single edit accounts for this — remove any one of the ${cause.atomIds.length} edits and the move still happens, apply any one alone and it does not`;
+  }
   const description = descriptionOf(cause.atomId);
   if (cause.sufficient && cause.necessary) {
     return `${description} — enough on its own, and the move does not happen without it`;
