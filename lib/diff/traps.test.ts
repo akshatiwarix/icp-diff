@@ -19,8 +19,17 @@ import type { AccountDiff, Cause, DiffReport } from "./types";
  * that tells you what the change cost.
  */
 
-const q3 = revisionById("q3");
-if (!q3) throw new Error("the q3 revision is missing from data/presets");
+/**
+ * Narrowing at module scope does not survive into the closures below, so the
+ * lookup throws inside a helper that returns a non-optional type instead.
+ */
+function requireRevision(id: string) {
+  const found = revisionById(id);
+  if (!found) throw new Error(`the "${id}" revision is missing from data/presets`);
+  return found;
+}
+
+const q3 = requireRevision("q3");
 
 function reportAt(mode: Parameters<typeof buildDiff>[0]["mode"]): DiffReport {
   const result = buildDiff({
@@ -348,9 +357,7 @@ describe("the rival pair refuses attribution", () => {
 
 describe("a wrong edit list is refused outright", () => {
   test("provenance that does not produce ICP B produces no report at all", () => {
-    const weights = revisionById("weights");
-    expect(weights).toBeDefined();
-    if (!weights) return;
+    const weights = requireRevision("weights");
 
     // The q3 edit list against the reweighted ICP B: every ablation would run and
     // attribute confidently to the wrong revision.
@@ -382,8 +389,7 @@ describe("both bundled revisions build", () => {
   });
 
   test("the weights-only revision moves accounts, which reviewers assume it cannot", () => {
-    const weights = revisionById("weights");
-    if (!weights) throw new Error("missing");
+    const weights = requireRevision("weights");
     const result = buildDiff({
       corpus: CORPUS,
       icpA: weights.icpA,
