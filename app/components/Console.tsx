@@ -2,9 +2,11 @@
 
 import { useMemo, useState } from "react";
 
-import { buildDiff, type EditAtom, type Mode, type Provenance } from "@/lib/diff";
+import { applyEdits, buildDiff, type EditAtom, type Mode, type Provenance } from "@/lib/diff";
 import type { Company, IcpDefinition } from "@/lib/scoring";
 
+import { EditAuthor } from "./EditAuthor";
+import { Exports } from "./Exports";
 import { Ledger } from "./Ledger";
 import { MovementTable, type TableFilter } from "./MovementTable";
 import { Num, Panel, VerdictChip } from "./ui";
@@ -65,20 +67,46 @@ export function Console({
    * instant, which is the one property that justified shipping the engine to the
    * browser at all.
    */
-  const result = useMemo(() => {
+  /**
+   * Locally authored edits extend the revision's own list, and ICP B is
+   * recomputed from it.
+   *
+   * B is never edited directly — it is `applyEdits(A, edits)`, exactly as in
+   * `data/presets.ts`. That is what keeps provenance real: the ledger the user is
+   * looking at is the same list the engine ablates over, so an edit added here is
+   * attributable on the same terms as one that shipped with the revision.
+   */
+  const effective = useMemo(() => {
     if (!pair) return null;
+    if (pair.provenance.kind !== "derived" || extraEdits.length === 0) {
+      return { icpA: pair.icpA, icpB: pair.icpB, provenance: pair.provenance };
+    }
+    const edits = [...pair.provenance.edits, ...extraEdits];
+    const applied = applyEdits(pair.icpA, edits);
+    if (!applied.ok) {
+      return { icpA: pair.icpA, icpB: pair.icpB, provenance: pair.provenance };
+    }
+    return {
+      icpA: pair.icpA,
+      icpB: { ...applied.icp, name: `${pair.icpB.name} + ${extraEdits.length} local` },
+      provenance: { kind: "derived", parentIcpName: pair.icpA.name, edits } satisfies Provenance,
+    };
+  }, [pair, extraEdits]);
+
+  const result = useMemo(() => {
+    if (!effective) return null;
     const mode: Mode =
       modeKind === "threshold" ? { kind: "threshold", threshold } : { kind: "top_n", topN };
     return buildDiff({
       corpus,
-      icpA: pair.icpA,
-      icpB: pair.icpB,
-      provenance: pair.provenance,
+      icpA: effective.icpA,
+      icpB: effective.icpB,
+      provenance: effective.provenance,
       mode,
     });
-  }, [corpus, pair, modeKind, threshold, topN]);
+  }, [corpus, effective, modeKind, threshold, topN]);
 
-  if (!pair || !result) return null;
+  if (!pair || !effective || !result) return null;
 
   if (!result.ok) {
     return (
@@ -136,11 +164,14 @@ export function Console({
             onSelect={setSelectedAtomId}
             combinationMoves={combinationMoves}
           />
-          {extraEdits.length > 0 ? (
-            <Panel className="p-3 text-[11px] text-slate-500 dark:text-slate-400">
-              {extraEdits.length} locally authored edit(s) pending.
-            </Panel>
-          ) : null}
+          <EditAuthor
+            icpA={effective.icpA}
+            currentEdits={pair.provenance.kind === "derived" ? pair.provenance.edits : []}
+            extraEdits={extraEdits}
+            onChange={setExtraEdits}
+            attributable={pair.provenance.kind === "derived"}
+          />
+          <Exports report={report} />
         </div>
 
         <MovementTable
