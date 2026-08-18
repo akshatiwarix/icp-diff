@@ -31,6 +31,8 @@ import {
 } from "@/lib/scoring";
 import { atomId, type EditAtom, type Provenance } from "@/lib/diff/types";
 
+import { TRAP_THRESHOLD } from "./traps";
+
 const scalarValue = z.union([z.string(), z.number()]);
 const numberValue = z.number().finite();
 
@@ -177,12 +179,23 @@ export const modeSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("top_n"), topN: z.number().int().min(1) }),
 ]);
 
-/** The request body of `POST /api/diff`. */
+/**
+ * The request body of `POST /api/diff`.
+ *
+ * The default cutoff is `TRAP_THRESHOLD`, imported rather than repeated. A route
+ * that quietly defaults to a different threshold than the one the app loads with
+ * is a report that disagrees with the screenshot beside it — and the two numbers
+ * were 55 and 52 for exactly as long as it took a test to notice.
+ *
+ * `provenance` defaults to `none`, which is the safe default in the only direction
+ * that matters: a caller who omits it gets an outcome diff with attribution
+ * refused, never attribution against an edit list nobody sent.
+ */
 export const diffRequestSchema = z.object({
   icpA: icpDefinitionSchema,
   icpB: icpDefinitionSchema,
   provenance: provenanceSchema.default({ kind: "none" }),
-  mode: modeSchema.default({ kind: "threshold", threshold: 55 }),
+  mode: modeSchema.default({ kind: "threshold", threshold: TRAP_THRESHOLD }),
   companies: companiesSchema.optional(),
 });
 
