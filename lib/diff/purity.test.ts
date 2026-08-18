@@ -38,6 +38,19 @@ const sourceFiles = readdirSync(here)
 /** Matches the module specifier of any static import or re-export. */
 const IMPORT_SPECIFIER = /(?:from|import)\s+["']([^"']+)["']/g;
 
+/**
+ * Comments are stripped before scanning.
+ *
+ * Day 001's version of this test scans the raw source, which is fine until a
+ * doc comment contains the words `from "..."` — this file's own prose about
+ * margins did, and the test failed on a sentence. A scanner that reports
+ * violations in comments trains you to reword documentation to satisfy it,
+ * which is precisely backwards.
+ */
+function stripComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+}
+
 describe("lib/diff imports nothing from a framework", () => {
   test("the scan actually found the engine source", () => {
     expect(sourceFiles).toContain("types.ts");
@@ -46,7 +59,7 @@ describe("lib/diff imports nothing from a framework", () => {
   });
 
   test.each(sourceFiles)("%s imports only relative modules", (name) => {
-    const source = readFileSync(join(here, name), "utf8");
+    const source = stripComments(readFileSync(join(here, name), "utf8"));
     const specifiers = [...source.matchAll(IMPORT_SPECIFIER)].map((match) => match[1] ?? "");
 
     expect(specifiers.filter((specifier) => FORBIDDEN.includes(specifier))).toEqual([]);

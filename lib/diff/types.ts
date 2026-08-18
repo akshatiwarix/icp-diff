@@ -207,21 +207,31 @@ export function isInteraction(cause: Cause): boolean {
 /* ───────────────────────────────── bands ──────────────────────────────── */
 
 /**
- * An inclusive interval of integer thresholds, 0–100.
+ * An inclusive interval on the qualification axis.
  *
- * Fragility is computed exhaustively over all 101 thresholds rather than
- * sampled, so there is no magic epsilon and no perturbation constant to defend.
- * It is also the same pass that powers the threshold slider, so it costs
- * nothing.
+ * Fragility is computed exhaustively across the whole axis rather than sampled,
+ * so there is no magic epsilon and no perturbation constant to defend. It is
+ * also the same pass that powers the slider, so it costs nothing.
+ *
+ * The axis is whichever knob the active mode exposes: thresholds 0–100, or N
+ * from 1 to the corpus size. Computing threshold bands while the user is looking
+ * at a top-N diff would answer a question they are not asking, with numbers that
+ * do not correspond to anything on screen.
  */
 export type Band = { from: number; to: number };
 
+export type BandAxis = "threshold" | "top_n";
+
 export type AccountBands = {
-  /** Thresholds at which this account qualifies under ICP A. */
+  axis: BandAxis;
+  /** Inclusive bounds of the axis, so a band can be read as a proportion. */
+  axisFrom: number;
+  axisTo: number;
+  /** Axis positions at which this account qualifies under ICP A. */
   qualifiedA: Band[];
-  /** Thresholds at which it qualifies under ICP B. */
+  /** Axis positions at which it qualifies under ICP B. */
   qualifiedB: Band[];
-  /** Thresholds at which the *current* verdict is the verdict. */
+  /** Axis positions at which the *current* verdict is the verdict. */
   verdictHolds: Band[];
 };
 
@@ -242,11 +252,16 @@ export type AccountDiff = {
   b: SideState;
   verdict: Verdict;
   /**
-   * Points to the nearest threshold at which this verdict stops holding.
-   * Derived from `bands.verdictHolds` — never computed separately, because two
-   * sources for one number drift.
+   * How far the cutoff can move before this verdict stops holding, in axis
+   * units, taking the closer of the two directions. `null` means the verdict
+   * holds across the entire axis and does not depend on the cutoff at all —
+   * which is the case for both disqualification verdicts.
+   *
+   * Derived from `bands.verdictHolds`, never computed separately: two sources
+   * for one number drift, and the number that drifts is the one the user reads
+   * to decide whether to trust the row above it.
    */
-  margin: number;
+  margin: number | null;
   /** Only meaningful when the account qualified on both sides. */
   rankDelta: number | null;
   bands: AccountBands;
