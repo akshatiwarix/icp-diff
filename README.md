@@ -10,6 +10,47 @@ attribution is refused by name instead of guessed.
 
 ---
 
+## Demo
+
+The default view: the ledger of eight edits on the left, every account that moved
+in the middle with its causes named, and the fragility strip beside each verdict.
+
+![The default diff at cutoff 52](docs/screenshot-default.png)
+
+Click a ledger row and the table filters to the accounts that edit caused. Note
+`S` and `N` on the chips — sufficient and necessary. Wickerdown Supply carries
+`S` on both edits and `N` on neither: either edit alone would have brought it in,
+so "which one did it" has no answer, and none is invented.
+
+![An edit selected, table filtered to its accounts](docs/screenshot-edit-selected.png)
+
+Expanding an account shows both definitions scored side by side. This is
+Harborstack — trap 3. It scores 83 under ICP A, its fit *improves* under ICP B,
+and it is disqualified anyway because 4,200 employees crossed the new 3,000
+handoff. Every changed line is marked, the old and new rule are both printed, and
+the criteria that would have matched are kept rather than short-circuited away.
+
+![Both breakdowns for a newly disqualified account](docs/screenshot-breakdown.png)
+
+Move the cutoff and the whole picture changes — a different ledger order, a
+different cast of movers, different bands. This is why the sweep checks all 101
+positions and why it landed before any UI.
+
+![The same revision at cutoff 72](docs/screenshot-threshold.png)
+
+Pick "Two unrelated ICPs" and attribution is refused by name. The movement table,
+the bands and both exports still work; the `Because` column is empty because
+there is no edit list to name, and the authoring panel explains why it will not
+open.
+
+![The unattributed refusal state](docs/screenshot-unattributed.png)
+
+Switch to top-N and displacement appears. Orbital CRM goes from 89 to 92 and
+falls from rank 13 to 21 — its own fit improved, and it lost its slot because
+others rose past it. The cause is `displaced by 11`, not an edit.
+
+![Displacement under top-N](docs/screenshot-displacement.png)
+
 ## The part everybody gets wrong
 
 The default build for this concept is four lines of code. Score the corpus under
