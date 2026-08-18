@@ -1,16 +1,44 @@
+import { CORPUS } from "@/data/corpus";
+import { DEFAULT_REVISION_ID, REVISIONS, RIVAL_PAIR } from "@/data/presets";
+import { TRAP_THRESHOLD, TRAP_TOP_N } from "@/data/traps";
+
+import { Console } from "./components/Console";
+
 /**
- * Placeholder. The console — ledger, movement table, band strip — lands at step
- * 10 of the task order in `PLAN.md`, after the engine and the invariant sweep.
- * Building UI before the sweep means debugging through pixels.
+ * A server component whose only job is to hand the validated corpus and the
+ * derived revisions to the console. Zod runs here, at import time; the browser
+ * gets data that has already passed it, and the pure engine that runs on both
+ * sides imports neither Zod nor this file.
+ *
+ * The default cutoff is `TRAP_THRESHOLD`. Every one of the ten engineered cases in
+ * `data/traps.ts` is visible at it, which is why the app opens there rather than at
+ * a round number.
  */
 export default function Home() {
   return (
-    <main className="mx-auto max-w-2xl px-6 py-24">
-      <h1 className="text-2xl font-semibold tracking-tight">ICP Diff</h1>
-      <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">
-        Day 012 of a 100-day building challenge. The engine is under construction —
-        see <code className="font-mono">PLAN.md</code> for the contract.
-      </p>
-    </main>
+    <Console
+      corpus={CORPUS}
+      pairs={[
+        ...REVISIONS.map((revision) => ({
+          id: revision.id,
+          label: revision.label,
+          summary: revision.summary,
+          icpA: revision.icpA,
+          icpB: revision.icpB,
+          provenance: revision.provenance,
+        })),
+        {
+          id: RIVAL_PAIR.id,
+          label: RIVAL_PAIR.label,
+          summary: RIVAL_PAIR.summary,
+          icpA: RIVAL_PAIR.icpA,
+          icpB: RIVAL_PAIR.icpB,
+          provenance: RIVAL_PAIR.provenance,
+        },
+      ]}
+      defaultPairId={DEFAULT_REVISION_ID}
+      defaultThreshold={TRAP_THRESHOLD}
+      defaultTopN={TRAP_TOP_N}
+    />
   );
 }

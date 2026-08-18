@@ -129,8 +129,8 @@ export const midMarketSaas: IcpDefinition = {
 };
 
 /**
- * The Q3 revision: seven changes a real GTM lead would make in one sitting, and
- * the reason this repo needs eight atom kinds rather than one `criterion_modified`.
+ * The Q3 revision: the changes a real GTM lead would make in one sitting, and the
+ * reason this repo needs eight atom kinds rather than one `criterion_modified`.
  *
  * Read as prose: *we'll go a bit smaller and a bit bigger on headcount, we care
  * much more about GTM hiring than we did, security hiring is now a signal, the
@@ -139,7 +139,7 @@ export const midMarketSaas: IcpDefinition = {
  * enterprise now, and — while we're here — exclude the sanctioned jurisdictions
  * we forgot to list.*
  *
- * That last one changes nothing, and the ledger says so. Nine atoms, eight of
+ * That last one changes nothing, and the ledger says so. Eight atoms, seven of
  * which do work.
  */
 export const q3RevisionEdits: EditAtom[] = [
@@ -265,7 +265,7 @@ export const REVISIONS: Revision[] = [
   revision(
     "q3",
     "Q3 revision",
-    "Nine edits: headcount loosened both ways, GTM hiring tripled in weight, security hiring added, the revenue floor turned into a band, the hiring-freeze exclusion dropped, the enterprise handoff moved to 3,000 — and one exclusion that changes nothing.",
+    "Eight edits: headcount loosened both ways, GTM hiring tripled in weight, security hiring added, the revenue floor turned into a band (two linked atoms), the hiring-freeze exclusion dropped, the enterprise handoff moved to 3,000 — and one exclusion that changes nothing.",
     midMarketSaas,
     "Mid-market B2B SaaS — Q3 revision",
     q3RevisionEdits,
